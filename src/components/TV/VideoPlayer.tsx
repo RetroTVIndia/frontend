@@ -1,0 +1,297 @@
+"use client";
+
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { BACKEND_URL } from "@/lib/config";
+
+interface Video {
+  title: string;
+  years: string;
+  youtube_urls: string[];
+}
+
+interface Props {
+  category?: string;
+}
+
+export type VideoPlayerHandle = {
+  play: () => void;
+  stop: () => void;
+  playNext: () => void;
+  isPlaying?: () => boolean;
+};
+
+function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
+  const [video, setVideo] = useState<Video | null>(null);
+  const [ytId, setYtId] = useState("");
+  const playerRef = useRef<any>(null);
+  // The YouTube Player constructor accepts either an element id or an Element.
+  // We'll store a real HTMLDivElement once it's mounted.
+  const iframeRef = useRef<HTMLDivElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  // (Global YT typings live in `src/types/global.d.ts`.)
+
+  // Load YT IFrame API once
+  useEffect(() => {
+    if (window.YT) return;
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
+    (window as any).onYouTubeIframeAPIReady = () => {
+      console.log("YouTube API Ready");
+    };
+  }, []);
+
+  const getYouTubeId = (url: string) => {
+    const ytRegex = /(?:\?v=|\/embed\/|\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(ytRegex);
+    // Use nullish coalescing to ensure we always return a string (never undefined)
+    return match?.[1] ?? "";
+  };
+
+  const stopPlayback = () => {
+    // If a YT player exists, destroy it to fully detach it from the DOM
+    // and remove event listeners. This ensures a subsequent play() will
+    // recreate a fresh player tied to the rendered iframe element.
+    if (playerRef.current) {
+      try {
+        if (typeof playerRef.current.destroy === "function") {
+          playerRef.current.destroy();
+        } else if (typeof playerRef.current.stopVideo === "function") {
+          playerRef.current.stopVideo();
+        }
+      } catch (err) {
+        // swallow any destruction errors but continue clearing state
+        console.warn("Failed to destroy YT player:", err);
+      }
+      playerRef.current = null;
+    }
+
+    setPlaying(false);
+    // Remove any iframe DOM inside the container so when we recreate a
+    // YT.Player it can reattach cleanly.
+    try {
+      if (iframeRef.current) {
+        iframeRef.current.innerHTML = "";
+      }
+    } catch (err) {
+      console.warn("Failed to clear iframe container:", err);
+    }
+
+    setVideo(null);
+    setYtId("");
+  };
+
+  const play = () => {
+    console.debug("VideoPlayer.play() called. playerRef.current:", playerRef.current, "ytId:", ytId);
+
+    if (playerRef.current) {
+      try {
+        playerRef.current.playVideo();
+        setPlaying(true);
+        return;
+      } catch (err) {
+        console.warn("playVideo failed, will try to refetch:", err);
+        // fall through and fetch a fresh video
+      }
+    }
+
+    // No player yet — load one by fetching a video (it will autoplay).
+    fetchRandomVideo();
+  };
+
+  const playNext = () => {
+    fetchRandomVideo();
+  };
+
+  const fetchRandomVideo = async () => {
+  console.debug("fetchRandomVideo: starting (will stop existing playback)");
+  stopPlayback();
+
+    const url = category
+      ? `${BACKEND_URL}/random?category=${category}`
+      : `${BACKEND_URL}/random`;
+
+    const res = await fetch(url);
+    if (!res.ok) return alert("Failed to fetch video");
+
+    const data: Video = await res.json();
+    if (!data.youtube_urls || data.youtube_urls.length === 0)
+      return alert("No videos available");
+
+    const randomUrl =
+      data.youtube_urls[Math.floor(Math.random() * data.youtube_urls.length)];
+
+    // randomUrl is guaranteed because we checked length above, but keep
+    // TypeScript happy by asserting it as a string when passing to
+    // getYouTubeId.
+    const id = getYouTubeId(randomUrl as string);
+    setVideo(data);
+    setYtId(id);
+  console.debug("fetchRandomVideo: fetched and set ytId", id);
+  };
+
+  // Expose methods to parent via ref (after functions are defined)
+  useImperativeHandle(ref, () => ({
+    play,
+    stop: stopPlayback,
+    playNext,
+    isPlaying: () => playing,
+  }));
+
+  // Create YT Player. Use a stable dependency array ([ytId]) to avoid
+  // changing the hook signature between HMR updates. If `ytId` is set but
+  // the DOM container hasn't mounted yet (`iframeRef.current` is null),
+  // schedule a short retry so the player is created once the ref exists.
+  useEffect(() => {
+    if (!ytId || !window.YT) return;
+
+    const createPlayer = () => {
+      if (!iframeRef.current) return;
+
+      // At this point iframeRef.current is an HTMLDivElement and window.YT is
+      // present; create the player.
+      playerRef.current = new window.YT.Player(iframeRef.current as HTMLDivElement, {
+      videoId: ytId,
+      playerVars: {
+        autoplay: 1,
+        controls: 0,
+        fs: 0,
+        disablekb: 1,
+        modestbranding: 1,
+        rel: 0,
+        playsinline: 1,
+        iv_load_policy: 3,
+        showinfo: 0, 
+        enablejsapi: 1,
+        origin: window.location.origin,
+      },
+      events: {
+        onReady: (event: any) => {
+          const duration = event.target.getDuration();
+          console.log("Duration:", duration);
+
+          const safeStart = Math.max(
+            5,
+            Math.floor(Math.random() * (duration - 20))
+          );
+
+          event.target.seekTo(safeStart, true);
+
+          setTimeout(() => {
+            event.target.playVideo();
+          }, 100);
+        },
+        onError: () => {
+          console.log("Video failed. Loading next...");
+          fetchRandomVideo();
+        },
+        onStateChange: (event: any) => {
+          // PLAYING → hide our overlay that masks the iframe (prevents
+          // YouTube's transient UI like title/overlay from showing).
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            setPlaying(true);
+          }
+
+          // PAUSED or BUFFERING -> keep overlay hidden once played
+          if (event.data === window.YT.PlayerState.PAUSED) {
+            // leaving setPlaying(true) so UI stays visible to user
+          }
+
+          // END of video → pick next one and reset playing state
+          if (event.data === window.YT.PlayerState.ENDED) {
+            setPlaying(false);
+            fetchRandomVideo();
+          }
+        },
+      },
+      });
+    };
+
+    // If container is not yet mounted, retry shortly once.
+    if (!iframeRef.current) {
+      const t = window.setTimeout(() => {
+        createPlayer();
+      }, 50);
+
+      return () => {
+        window.clearTimeout(t);
+      };
+    }
+
+    createPlayer();
+
+    // Clean up previous player when ytId changes or the component unmounts.
+    return () => {
+      if (playerRef.current) {
+        try {
+          if (typeof playerRef.current.destroy === "function") {
+            playerRef.current.destroy();
+          }
+        } catch (err) {
+          console.warn("Failed to cleanup YT player:", err);
+        }
+        playerRef.current = null;
+      }
+    };
+  }, [ytId]);
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      {/* <div className="flex gap-3">
+        <button
+          onClick={fetchRandomVideo}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Play Random Video
+        </button>
+
+        <button
+          onClick={stopPlayback}
+          className="px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Stop
+        </button>
+      </div> */}
+
+      {video && (
+        <div
+          className="relative"
+          style={{ width: "800px", height: "450px" }}
+        >
+          <div ref={iframeRef} style={{ width: "100%", height: "100%" }}></div>
+
+          {/* Overlay to mask initial YouTube UI until playback begins. */}
+          <div
+            aria-hidden
+            // Make the overlay intercept pointer events while the player is
+            // not playing (opacity 1) and also while playing we keep it on
+            // the DOM with pointer handlers to prevent accidental clicks on
+            // the iframe that would pause playback.
+            tabIndex={-1}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "transparent",
+              opacity: 1,
+              pointerEvents: "auto",
+              zIndex: 50,
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default forwardRef(VideoPlayer);
