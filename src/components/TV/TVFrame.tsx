@@ -2,12 +2,12 @@
 
 import React from "react";
 
-export default function TVFrame({ children, isPlaying, onToggle, onNext }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void }) {
+export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolumeUp, onVolumeDown }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void; onVolumeUp?: () => void; onVolumeDown?: () => void }) {
   return (
     <div className="relative w-[900px] mx-auto">
       {/* TV FRAME */}
       <img
-        src="/2000s_tvbackclean.webp"
+        src="/tvbackclean.webp"
         className="w-full pointer-events-none select-none"
         alt="tv-frame"
       />
@@ -19,7 +19,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext }: { chi
 
       {/* MASK OVERLAY */}
       <img
-        src="/2000s_tvstencil.webp"
+        src="/tvstencil.webp"
         className="w-full absolute top-[30px] inset-0 pointer-events-none select-none"
         alt="tv-mask"
       />
@@ -57,6 +57,26 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext }: { chi
         }}
         aria-label="Next"
         className={`absolute top-[504.5px] left-[451.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60] ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        disabled={!isPlaying}
+      />
+
+      {/* Volume Down */}
+      <button
+        onClick={() => {
+          onVolumeDown?.();
+        }}
+        aria-label="Volume Down"
+        className={`absolute top-[504.5px] left-[384px] w-[13px] h-[13px] rounded-full bg-transprent border-0 z-[60]  ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        disabled={!isPlaying}
+      />
+
+      {/* Volume Up */}
+      <button
+        onClick={() => {
+          onVolumeUp?.();
+        }}
+        aria-label="Volume Up"
+        className={`absolute top-[504.5px] left-[406.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60]  ${isPlaying ? '' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />
     </div>

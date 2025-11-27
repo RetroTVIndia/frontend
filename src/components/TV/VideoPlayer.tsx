@@ -18,6 +18,10 @@ export type VideoPlayerHandle = {
   stop: () => void;
   playNext: () => void;
   isPlaying?: () => boolean;
+  // volume helpers: value range 0-100
+  setVolume?: (v: number) => void;
+  changeVolume?: (delta: number) => void;
+  getVolume?: () => number;
 };
 
 function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
@@ -28,6 +32,7 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
   // We'll store a real HTMLDivElement once it's mounted.
   const iframeRef = useRef<HTMLDivElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [volume, setVolumeState] = useState<number>(100);
 
   // (Global YT typings live in `src/types/global.d.ts`.)
 
@@ -134,11 +139,30 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
   };
 
   // Expose methods to parent via ref (after functions are defined)
+  const setVolume = (v: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(v)));
+    setVolumeState(clamped);
+    if (playerRef.current && typeof playerRef.current.setVolume === "function") {
+      try {
+        playerRef.current.setVolume(clamped);
+      } catch (err) {
+        console.warn("Failed to set player volume:", err);
+      }
+    }
+  };
+
+  const changeVolume = (delta: number) => {
+    setVolume(volume + delta);
+  };
+
   useImperativeHandle(ref, () => ({
     play,
     stop: stopPlayback,
     playNext,
     isPlaying: () => playing,
+    setVolume,
+    changeVolume,
+    getVolume: () => volume,
   }));
 
   // Create YT Player. Use a stable dependency array ([ytId]) to avoid
@@ -172,6 +196,15 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
         onReady: (event: any) => {
           const duration = event.target.getDuration();
           console.log("Duration:", duration);
+
+          // Ensure player volume is initialized to our current state.
+          try {
+            if (typeof event.target.setVolume === "function") {
+              event.target.setVolume(volume);
+            }
+          } catch (err) {
+            console.warn("Failed to set initial volume:", err);
+          }
 
           const safeStart = Math.max(
             5,

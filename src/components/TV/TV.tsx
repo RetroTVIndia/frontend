@@ -32,6 +32,14 @@ export default function TV({ category }: { category?: string }) {
           if (!playerRef.current?.isPlaying?.()) return;
           playerRef.current?.playNext();
         }}
+        onVolumeUp={() => {
+          // increase by 10
+          playerRef.current?.changeVolume?.(10);
+        }}
+        onVolumeDown={() => {
+          // decrease by 10
+          playerRef.current?.changeVolume?.(-10);
+        }}
       >
         <VideoPlayer ref={playerRef} category={category} />
       </TVFrame>
