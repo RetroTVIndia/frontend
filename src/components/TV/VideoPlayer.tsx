@@ -11,6 +11,7 @@ interface Video {
 
 interface Props {
   category?: string;
+  onShowChange?: (name: string) => void;
 }
 
 export type VideoPlayerHandle = {
@@ -22,9 +23,10 @@ export type VideoPlayerHandle = {
   setVolume?: (v: number) => void;
   changeVolume?: (delta: number) => void;
   getVolume?: () => number;
+  getShowName?: () => string;
 };
 
-function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
+function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlayerHandle>) {
   const [video, setVideo] = useState<Video | null>(null);
   const [ytId, setYtId] = useState("");
   const playerRef = useRef<any>(null);
@@ -33,6 +35,7 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
   const iframeRef = useRef<HTMLDivElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolumeState] = useState<number>(100);
+  const [showName, setShowName] = useState("");
 
   // (Global YT typings live in `src/types/global.d.ts`.)
 
@@ -135,6 +138,15 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
     const id = getYouTubeId(randomUrl as string);
     setVideo(data);
     setYtId(id);
+    // Do not use data.title. We'll obtain the canonical title from the
+    // YouTube player once it's ready (via getVideoData().title) or when
+    // playback begins. Clear current showName and let the player fill it.
+    setShowName("");
+    try {
+      onShowChange?.("");
+    } catch (err) {
+      console.warn("onShowChange callback failed:", err);
+    }
   console.debug("fetchRandomVideo: fetched and set ytId", id);
   };
 
@@ -152,8 +164,22 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
   };
 
   const changeVolume = (delta: number) => {
-    setVolume(volume + delta);
+    setVolumeState((prev) => {
+      const next = Math.max(0, Math.min(100, Math.round(prev + delta)));
+      return next;
+    });
   };
+
+  // Whenever the `volume` state changes, apply it to the YT player if present.
+  useEffect(() => {
+    if (playerRef.current && typeof playerRef.current.setVolume === "function") {
+      try {
+        playerRef.current.setVolume(volume);
+      } catch (err) {
+        console.warn("Failed to apply volume to player:", err);
+      }
+    }
+  }, [volume]);
 
   useImperativeHandle(ref, () => ({
     play,
@@ -163,6 +189,7 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
     setVolume,
     changeVolume,
     getVolume: () => volume,
+  getShowName: () => showName,
   }));
 
   // Create YT Player. Use a stable dependency array ([ytId]) to avoid
@@ -197,6 +224,22 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
           const duration = event.target.getDuration();
           console.log("Duration:", duration);
 
+          // Try to read the canonical YouTube-provided title and inform parent.
+          try {
+            const info = event.target.getVideoData?.();
+            const ytTitle = info?.title ?? "";
+            if (ytTitle) {
+              setShowName(ytTitle);
+              try {
+                onShowChange?.(ytTitle);
+              } catch (err) {
+                console.warn("onShowChange callback failed:", err);
+              }
+            }
+          } catch (err) {
+            console.warn("Failed to read YT title onReady:", err);
+          }
+
           // Ensure player volume is initialized to our current state.
           try {
             if (typeof event.target.setVolume === "function") {
@@ -226,6 +269,21 @@ function VideoPlayer({ category }: Props, ref: React.Ref<VideoPlayerHandle>) {
           // YouTube's transient UI like title/overlay from showing).
           if (event.data === window.YT.PlayerState.PLAYING) {
             setPlaying(true);
+            // When playback begins, refresh title from YT metadata.
+            try {
+              const info = event.target.getVideoData?.();
+              const ytTitle = info?.title ?? "";
+              if (ytTitle) {
+                setShowName(ytTitle);
+                try {
+                  onShowChange?.(ytTitle);
+                } catch (err) {
+                  console.warn("onShowChange callback failed:", err);
+                }
+              }
+            } catch (err) {
+              console.warn("Failed to read YT title onStateChange:", err);
+            }
           }
 
           // PAUSED or BUFFERING -> keep overlay hidden once played

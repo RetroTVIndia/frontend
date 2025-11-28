@@ -2,7 +2,9 @@
 
 import React from "react";
 
-export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolumeUp, onVolumeDown }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void; onVolumeUp?: () => void; onVolumeDown?: () => void }) {
+export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolumeUp, onVolumeDown, showName }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void; onVolumeUp?: () => void; onVolumeDown?: () => void; showName?: string }) {
+  console.log(showName);
+
   return (
     <div className="relative w-[900px] mx-auto">
       {/* TV FRAME */}
@@ -28,14 +30,14 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
       <button
         onClick={onToggle}
         aria-label={isPlaying ? "Stop" : "Play"}
-        className={`absolute top-[498px] left-[531px] w-[26px] h-[26px] rounded-full border-0 z-[60]`}
+        className={`absolute top-[498px] left-[531px] w-[26px] h-[26px] rounded-full border-0 z-[60] cursor-pointer`}
       >
       </button>
 
       {/* On light — only active while playing */}
       <div
         aria-hidden
-        className={`absolute top-[505px] left-[482px] w-[13px] h-[13px] rounded-full border-0 z-[60] bg-green-600 tv-indicator-glow transition-opacity duration-700 ease-in-out ${isPlaying ? 'opacity-100 tv-indicator-animated' : 'opacity-0'}`}
+        className={`absolute top-[505px] left-[482px] w-[13px] h-[13px] rounded-full border-0 z-[60] tv-indicator-glow transition-opacity duration-700 ease-in-out ${isPlaying ? 'opacity-100 tv-indicator-animated' : 'opacity-0'}`}
       />
 
       {/* Previous button — only active while playing */}
@@ -45,7 +47,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onNext?.();
         }}
         aria-label="Previous"
-        className={`absolute top-[504.5px] left-[429.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60] ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        className={`absolute top-[504.5px] left-[429.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60] ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />
 
@@ -56,7 +58,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onNext?.();
         }}
         aria-label="Next"
-        className={`absolute top-[504.5px] left-[451.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60] ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        className={`absolute top-[504.5px] left-[451.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60] ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />
 
@@ -66,7 +68,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onVolumeDown?.();
         }}
         aria-label="Volume Down"
-        className={`absolute top-[504.5px] left-[384px] w-[13px] h-[13px] rounded-full bg-transprent border-0 z-[60]  ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        className={`absolute top-[504.5px] left-[384px] w-[13px] h-[13px] rounded-full bg-transprent border-0 z-[60]  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />
 
@@ -76,9 +78,16 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onVolumeUp?.();
         }}
         aria-label="Volume Up"
-        className={`absolute top-[504.5px] left-[406.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60]  ${isPlaying ? '' : 'cursor-not-allowed'}`}
+        className={`absolute top-[504.5px] left-[406.5px] w-[13px] h-[13px] rounded-full bg-transparent border-0 z-[60]  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />
+
+      {/* Info text: show instruction when off, otherwise show show name */}
+      <div className={`absolute top-[587px] left-[10px] w-full z-[60] text-white text-center`}>
+        <p className="tv-info-glow tv-info-animated">
+          {isPlaying ? (showName && showName.length > 0 ? showName : "Loading...") : "Hit the play button to start"}
+        </p>
+      </div>
     </div>
   );
 }

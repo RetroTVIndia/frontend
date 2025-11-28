@@ -46,6 +46,25 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@font-face {
+  font-family: 'digital7';
+  src: url('public/digital_7/digital-7.ttf') format('truetype');
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'digital7';
+  src: url('public/digital_7/digital-7.ttf') format('truetype');
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Utility class to apply the digital7 font */
+.font-digital7 {
+  font-family: 'digital7', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -145,10 +164,40 @@
   animation: tv-indicator-pulse 3.8s ease-in-out infinite,
              tv-indicator-flicker 1.8s steps(2, end) infinite;
   will-change: opacity, transform;
+  background-image: radial-gradient(rgb(114, 255, 114), rgba(0, 0, 0, 0.79));
 }
 
 /* Soft glow and smooth fade-in/out for the indicator */
 .tv-indicator-glow {
   filter: blur(0.2px) saturate(1.1);
   box-shadow: 0 0 20px 6px rgb(34 197 94 / 79%);
+}
+
+/* Subtle slow pulse with occasional tiny flickers for the TV ext info */
+@keyframes tv-info-pulse {
+  0% { opacity: 0.99; transform: scale(0.97); }
+  40% { opacity: 0.95; transform: scale(1.01); }
+  55% { opacity: 0.89; transform: scale(0.98); }
+  70% { opacity: 0.96; transform: scale(1); }
+  100% { opacity: 0.99; transform: scale(0.97); }
+}
+
+@keyframes tv-info-flicker {
+  0%, 100% { opacity: 1; }
+  10% { opacity: 0.92; }
+  30% { opacity: 0.97; }
+  60% { opacity: 0.89; }
+  80% { opacity: 0.95; }
+}
+
+.tv-info-animated {
+  animation: tv-info-pulse 3.8s ease-in-out infinite,
+             tv-info-flicker 1.8s steps(2, end) infinite;
+  will-change: opacity, transform;
+}
+
+/* Soft glow and smooth fade-in/out for the text info */
+.tv-info-glow {
+  text-shadow: 0 0 8px rgba(34, 175, 197, 0.9), 0 0 18px rgba(34, 175, 197, 0.6);
+  color: #aef7fb;
 }
