@@ -10,7 +10,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
       {/* TV FRAME */}
       <img
         src="/tvbackclean.webp"
-        className="w-full pointer-events-none select-none"
+        className="w-full pointer-events-none select-none z-60"
         alt="tv-frame"
       />
 
@@ -19,10 +19,18 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
         {children}
       </div>
 
+      {/* GRAIN OVERLAY */}
+      <img
+        src="/tvstatic.gif"
+        aria-hidden
+        className={`absolute top-[30px] left-[92px] w-[715px] h-[435px] ${isPlaying ? (showName && showName.length > 0 ? "opacity-10" : "opacity-100") : "opacity-0"}`}
+        style={{pointerEvents: "none" }}
+      />
+
       {/* MASK OVERLAY */}
       <img
         src="/tvstencil.webp"
-        className="w-full absolute top-[30px] inset-0 pointer-events-none select-none"
+        className="w-full absolute top-[30px] inset-0 pointer-events-none select-none z-61"
         alt="tv-mask"
       />
 
@@ -84,7 +92,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
 
       {/* Info text: show instruction when off, otherwise show show name */}
       <div className={`absolute top-[587px] left-[10px] w-full z-[60] text-white text-center`}>
-        <p className="tv-info-glow tv-info-animated">
+        <p className="tv-info-glow tv-info-animated italic">
           {isPlaying ? (showName && showName.length > 0 ? showName : "Loading...") : "Hit the play button to start"}
         </p>
       </div>

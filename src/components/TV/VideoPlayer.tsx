@@ -331,28 +331,13 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* <div className="flex gap-3">
-        <button
-          onClick={fetchRandomVideo}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Play Random Video
-        </button>
-
-        <button
-          onClick={stopPlayback}
-          className="px-4 py-2 bg-red-600 text-white rounded"
-        >
-          Stop
-        </button>
-      </div> */}
 
       {video && (
         <div
           className="relative"
           style={{ width: "800px", height: "450px" }}
         >
-          <div ref={iframeRef} style={{ width: "100%", height: "100%" }}></div>
+          <div ref={iframeRef} style={{ width: "100%", height: "100%" }} className="video-noise"></div>
 
           {/* Overlay to mask initial YouTube UI until playback begins. */}
           <div
