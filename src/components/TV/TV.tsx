@@ -15,6 +15,7 @@ export default function TV({ category }: { category?: string }) {
     const check = () => setIsPlaying(!!playerRef.current?.isPlaying?.());
     check();
   }, []);
+  
 
   // When playback is active, poll the player for the show name until available.
   // Use onShowChange callback from VideoPlayer to update showName (no polling).
@@ -51,7 +52,7 @@ export default function TV({ category }: { category?: string }) {
           playerRef.current?.changeVolume?.(-10);
         }}
       >
-  <VideoPlayer ref={playerRef} category={category} onShowChange={(name) => setShowName(name)} />
+        <VideoPlayer ref={playerRef} category={category} onShowChange={(name) => setShowName(name)} />
       </TVFrame>
     </div>
   );

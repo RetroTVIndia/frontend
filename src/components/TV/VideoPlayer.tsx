@@ -189,7 +189,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
     setVolume,
     changeVolume,
     getVolume: () => volume,
-  getShowName: () => showName,
+    getShowName: () => showName,
   }));
 
   // Create YT Player. Use a stable dependency array ([ytId]) to avoid
@@ -207,17 +207,21 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
       playerRef.current = new window.YT.Player(iframeRef.current as HTMLDivElement, {
       videoId: ytId,
       playerVars: {
-        autoplay: 1,
+        enablejsapi: 1,
+        playerapiid: "ytplayer",
+        autoplay: 0,
+        autohide: 1,
         controls: 0,
         fs: 0,
-        disablekb: 1,
-        modestbranding: 1,
         rel: 0,
-        playsinline: 1,
-        iv_load_policy: 3,
-        showinfo: 0, 
-        enablejsapi: 1,
         origin: window.location.origin,
+        modestbranding: 1,
+        showinfo: 0, 
+        iv_load_policy: 3,
+        wmode: "opaque",
+        playsinline: 1,
+        widgetid:1,
+        disablekb: 1,
       },
       events: {
         onReady: (event: any) => {
@@ -335,9 +339,9 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
       {video && (
         <div
           className="relative"
-          style={{ width: "800px", height: "450px" }}
+          style={{ width: "1000px", height: "550px" }}
         >
-          <div ref={iframeRef} style={{ width: "100%", height: "100%" }} className="video-noise"></div>
+          <div ref={iframeRef} style={{ width: "100%", height: "100%" }}></div>
 
           {/* Overlay to mask initial YouTube UI until playback begins. */}
           <div

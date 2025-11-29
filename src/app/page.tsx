@@ -9,7 +9,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="mt-10">
+      <div className=" mt-6 w-full">
         <TV category={selectedCategory} />
       </div>
     </>
