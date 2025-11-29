@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { boolean } from "zod";
 
 export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolumeUp, onVolumeDown, showName }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void; onVolumeUp?: () => void; onVolumeDown?: () => void; showName?: string }) {
   const [staticPrevOpacity, setStaticPrevOpacity] = useState("opacity-0");
   const staticCurrentOpacity = isPlaying
   ? (showName && showName.length > 0 ? "opacity-10" : "opacity-100")
   : "opacity-0";
-  const shouldFade = staticPrevOpacity === "opacity-100" && staticCurrentOpacity === "opacity-10";
   const [enableFade, setEnableFade] = useState(false);
 
   useEffect(() => {
@@ -99,22 +97,22 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
         disabled={!isPlaying}
       />
 
-      {/* Volume Down */}
-      <button
-        onClick={() => {
-          onVolumeDown?.();
-        }}
-        aria-label="Volume Down"
-        className={`absolute top-[617.2px] left-[497.3px] w-[14px] h-[14px] rounded-full border-0 z-100  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-        disabled={!isPlaying}
-      />
-
       {/* Volume Up */}
       <button
         onClick={() => {
           onVolumeUp?.();
         }}
         aria-label="Volume Up"
+        className={`absolute top-[617.2px] left-[497.3px] w-[14px] h-[14px] rounded-full border-0 z-100  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        disabled={!isPlaying}
+      />
+
+      {/* Volume Down */}
+      <button
+        onClick={() => {
+          onVolumeDown?.();
+        }}
+        aria-label="Volume Down"
         className={`absolute top-[617.2px] left-[469.9px] w-[14px] h-[14px] rounded-full border-0 z-100  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
         disabled={!isPlaying}
       />

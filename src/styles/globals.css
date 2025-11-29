@@ -164,7 +164,7 @@
   animation: tv-indicator-pulse 3.8s ease-in-out infinite,
              tv-indicator-flicker 1.8s steps(2, end) infinite;
   will-change: opacity, transform;
-  background-image: radial-gradient(rgb(114, 255, 114), rgba(0, 0, 0, 0.79));
+  background-image: radial-gradient(rgb(114, 255, 114), rgba(0, 0, 0, 0));
 }
 
 /* Soft glow and smooth fade-in/out for the indicator */
@@ -210,4 +210,13 @@
 @keyframes tv-static-fade {
   0%  { opacity: 1; }
   100% { opacity: 0.1; }
+}
+
+.remote {
+  border-color: #3d3b3b;
+  background-image: linear-gradient(90deg, rgb(125, 125, 125) 0, rgb(63, 56, 56) 49%, rgb(175, 175, 175) 100%);
+}
+
+.remote li {
+  background-color: #707070;
 }
