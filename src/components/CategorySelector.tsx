@@ -11,7 +11,7 @@ export function CategorySelector({ selectedCategory, onSelectCategory }: Props) 
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("/categories")
+    void fetch("/categories")
       .then((res) => res.json())
       .then(setCategories);
   }, []);

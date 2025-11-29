@@ -29,7 +29,7 @@ export type VideoPlayerHandle = {
 function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlayerHandle>) {
   const [video, setVideo] = useState<Video | null>(null);
   const [ytId, setYtId] = useState("");
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
   // The YouTube Player constructor accepts either an element id or an Element.
   // We'll store a real HTMLDivElement once it's mounted.
   const iframeRef = useRef<HTMLDivElement | null>(null);
@@ -47,14 +47,14 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    (window as any).onYouTubeIframeAPIReady = () => {
+    window.onYouTubeIframeAPIReady = () => {
       console.log("YouTube API Ready");
     };
   }, []);
 
   const getYouTubeId = (url: string) => {
     const ytRegex = /(?:\?v=|\/embed\/|\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = url.match(ytRegex);
+    const match = ytRegex.exec(url);
     // Use nullish coalescing to ensure we always return a string (never undefined)
     return match?.[1] ?? "";
   };
@@ -65,11 +65,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
     // recreate a fresh player tied to the rendered iframe element.
     if (playerRef.current) {
       try {
-        if (typeof playerRef.current.destroy === "function") {
-          playerRef.current.destroy();
-        } else if (typeof playerRef.current.stopVideo === "function") {
-          playerRef.current.stopVideo();
-        }
+        playerRef.current.destroy();
       } catch (err) {
         // swallow any destruction errors but continue clearing state
         console.warn("Failed to destroy YT player:", err);
@@ -107,14 +103,14 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
     }
 
     // No player yet — load one by fetching a video (it will autoplay).
-    fetchRandomVideo();
+    void fetchRandomVideo();
   };
 
   const playNext = () => {
-    fetchRandomVideo();
+    void fetchRandomVideo();
   };
 
-  const fetchRandomVideo = async () => {
+  const fetchRandomVideo = async (): Promise<void> => {
   console.debug("fetchRandomVideo: starting (will stop existing playback)");
   stopPlayback();
 
@@ -123,19 +119,23 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
       : `${BACKEND_URL}/random`;
 
     const res = await fetch(url);
-    if (!res.ok) return alert("Failed to fetch video");
+    if (!res.ok) {
+      alert("Failed to fetch video");
+      return;
+    }
 
+    // The backend guarantees this shape for /random
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const data: Video = await res.json();
-    if (!data.youtube_urls || data.youtube_urls.length === 0)
-      return alert("No videos available");
+    if (!data.youtube_urls || data.youtube_urls.length === 0) {
+      alert("No videos available");
+      return;
+    }
 
     const randomUrl =
-      data.youtube_urls[Math.floor(Math.random() * data.youtube_urls.length)];
+      data.youtube_urls[Math.floor(Math.random() * data.youtube_urls.length)]!;
 
-    // randomUrl is guaranteed because we checked length above, but keep
-    // TypeScript happy by asserting it as a string when passing to
-    // getYouTubeId.
-    const id = getYouTubeId(randomUrl as string);
+    const id = getYouTubeId(randomUrl);
     setVideo(data);
     setYtId(id);
     // Do not use data.title. We'll obtain the canonical title from the
@@ -154,7 +154,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
   const setVolume = (v: number) => {
     const clamped = Math.max(0, Math.min(100, Math.round(v)));
     setVolumeState(clamped);
-    if (playerRef.current && typeof playerRef.current.setVolume === "function") {
+    if (playerRef.current) {
       try {
         playerRef.current.setVolume(clamped);
       } catch (err) {
@@ -172,7 +172,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
   // Whenever the `volume` state changes, apply it to the YT player if present.
   useEffect(() => {
-    if (playerRef.current && typeof playerRef.current.setVolume === "function") {
+    if (playerRef.current) {
       try {
         playerRef.current.setVolume(volume);
       } catch (err) {
@@ -196,6 +196,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
   // changing the hook signature between HMR updates. If `ytId` is set but
   // the DOM container hasn't mounted yet (`iframeRef.current` is null),
   // schedule a short retry so the player is created once the ref exists.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!ytId || !window.YT) return;
 
@@ -204,7 +205,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
       // At this point iframeRef.current is an HTMLDivElement and window.YT is
       // present; create the player.
-      playerRef.current = new window.YT.Player(iframeRef.current as HTMLDivElement, {
+      playerRef.current = new window.YT.Player(iframeRef.current, {
       videoId: ytId,
       playerVars: {
         enablejsapi: 1,
@@ -224,7 +225,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
         disablekb: 1,
       },
       events: {
-        onReady: (event: any) => {
+        onReady: (event: YTPlayerEvent) => {
           const duration = event.target.getDuration();
           console.log("Duration:", duration);
 
@@ -266,9 +267,9 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
         },
         onError: () => {
           console.log("Video failed. Loading next...");
-          fetchRandomVideo();
+          void fetchRandomVideo();
         },
-        onStateChange: (event: any) => {
+        onStateChange: (event: YTPlayerEvent) => {
           // PLAYING → hide our overlay that masks the iframe (prevents
           // YouTube's transient UI like title/overlay from showing).
           if (event.data === window.YT.PlayerState.PLAYING) {
@@ -298,7 +299,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
           // END of video → pick next one and reset playing state
           if (event.data === window.YT.PlayerState.ENDED) {
             setPlaying(false);
-            fetchRandomVideo();
+            void fetchRandomVideo();
           }
         },
       },
