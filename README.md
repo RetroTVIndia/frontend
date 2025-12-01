@@ -31,7 +31,7 @@ The frontend communicates with the RetroTVIndia Backend.
 ## ▶️ Running Locally
 
 ```bash
-git clone https://github.com/RetroTVIndia/frontend
+git clone https://github.com/RetroTVIndia/frontend.git
 cd frontend
 npm install
 npm run dev
