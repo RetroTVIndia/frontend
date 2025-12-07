@@ -22,7 +22,7 @@ export function CategorySelector({
         return;
       }
       // Assuming the backend returns an array of strings
-      const data: string[] = await res.json();
+      const data = (await res.json()) as string[];
       setCategories(data);
     };
     void fetchCategories();
@@ -31,7 +31,7 @@ export function CategorySelector({
   return (
     <div className="mb-4 flex flex-wrap gap-4">
       {categories.map((cat) => (
-        <label key={cat} className="cursor-pointer">
+        <label key={cat} className="cursor-pointer text-white">
           <input
             type="radio"
             name="category"

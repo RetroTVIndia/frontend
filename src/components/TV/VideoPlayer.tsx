@@ -16,6 +16,13 @@ interface Video {
   category?: string;
 }
 
+interface VideoApiResponse {
+  youtube_urls: string[];
+  category_name?: string;
+  title?: string;
+  years?: string;
+}
+
 interface Props {
   category?: string;
   onShowChange?: (name: string) => void;
@@ -147,8 +154,7 @@ function VideoPlayer(
     }
 
     // The backend guarantees this shape for /random
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data = await res.json();
+    const data = (await res.json()) as VideoApiResponse;
     if (!data.youtube_urls || data.youtube_urls.length === 0) {
       alert("No videos available");
       return;
@@ -158,7 +164,14 @@ function VideoPlayer(
       data.youtube_urls[Math.floor(Math.random() * data.youtube_urls.length)]!;
 
     const id = getYouTubeId(randomUrl);
-    setVideo(data);
+    // Convert API response to Video type
+    const videoData: Video = {
+      title: data.title ?? "",
+      years: data.years ?? "",
+      youtube_urls: data.youtube_urls,
+      category: data.category_name,
+    };
+    setVideo(videoData);
     setYtId(id);
     // Do not use data.title. We'll obtain the canonical title from the
     // YouTube player once it's ready (via getVideoData().title) or when
@@ -170,7 +183,7 @@ function VideoPlayer(
       console.warn("onShowChange callback failed:", err);
     }
     // Extract category from backend response or use the filter category
-    const videoCategory = data.category_name || category || "";
+    const videoCategory = data.category_name ?? category ?? "";
     try {
       onCategoryChange?.(videoCategory);
     } catch (err) {
