@@ -1,17 +1,25 @@
 "use client";
 
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { BACKEND_URL } from "@/lib/config";
 
 interface Video {
   title: string;
   years: string;
   youtube_urls: string[];
+  category?: string;
 }
 
 interface Props {
   category?: string;
   onShowChange?: (name: string) => void;
+  onCategoryChange?: (category: string) => void;
 }
 
 export type VideoPlayerHandle = {
@@ -26,7 +34,10 @@ export type VideoPlayerHandle = {
   getShowName?: () => string;
 };
 
-function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlayerHandle>) {
+function VideoPlayer(
+  { category, onShowChange, onCategoryChange }: Props,
+  ref: React.Ref<VideoPlayerHandle>,
+) {
   const [video, setVideo] = useState<Video | null>(null);
   const [ytId, setYtId] = useState("");
   const playerRef = useRef<YTPlayer | null>(null);
@@ -86,10 +97,21 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
     setVideo(null);
     setYtId("");
+    // Clear category when stopping
+    try {
+      onCategoryChange?.("");
+    } catch (err) {
+      console.warn("onCategoryChange callback failed:", err);
+    }
   };
 
   const play = () => {
-    console.debug("VideoPlayer.play() called. playerRef.current:", playerRef.current, "ytId:", ytId);
+    console.debug(
+      "VideoPlayer.play() called. playerRef.current:",
+      playerRef.current,
+      "ytId:",
+      ytId,
+    );
 
     if (playerRef.current) {
       try {
@@ -111,8 +133,8 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
   };
 
   const fetchRandomVideo = async (): Promise<void> => {
-  console.debug("fetchRandomVideo: starting (will stop existing playback)");
-  stopPlayback();
+    console.debug("fetchRandomVideo: starting (will stop existing playback)");
+    stopPlayback();
 
     const url = category
       ? `${BACKEND_URL}/random?category=${category}`
@@ -126,7 +148,7 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
     // The backend guarantees this shape for /random
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const data: Video = await res.json();
+    const data = await res.json();
     if (!data.youtube_urls || data.youtube_urls.length === 0) {
       alert("No videos available");
       return;
@@ -147,7 +169,14 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
     } catch (err) {
       console.warn("onShowChange callback failed:", err);
     }
-  console.debug("fetchRandomVideo: fetched and set ytId", id);
+    // Extract category from backend response or use the filter category
+    const videoCategory = data.category_name || category || "";
+    try {
+      onCategoryChange?.(videoCategory);
+    } catch (err) {
+      console.warn("onCategoryChange callback failed:", err);
+    }
+    console.debug("fetchRandomVideo: fetched and set ytId", id);
   };
 
   // Expose methods to parent via ref (after functions are defined)
@@ -206,75 +235,31 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
       // At this point iframeRef.current is an HTMLDivElement and window.YT is
       // present; create the player.
       playerRef.current = new window.YT.Player(iframeRef.current, {
-      videoId: ytId,
-      playerVars: {
-        enablejsapi: 1,
-        playerapiid: "ytplayer",
-        autoplay: 0,
-        autohide: 1,
-        controls: 0,
-        fs: 0,
-        rel: 0,
-        origin: window.location.origin,
-        modestbranding: 1,
-        showinfo: 0, 
-        iv_load_policy: 3,
-        wmode: "opaque",
-        playsinline: 1,
-        widgetid:1,
-        disablekb: 1,
-      },
-      events: {
-        onReady: (event: YTPlayerEvent) => {
-          const duration = event.target.getDuration();
-          console.log("Duration:", duration);
-
-          // Try to read the canonical YouTube-provided title and inform parent.
-          try {
-            const info = event.target.getVideoData?.();
-            const ytTitle = info?.title ?? "";
-            if (ytTitle) {
-              setShowName(ytTitle);
-              try {
-                onShowChange?.(ytTitle);
-              } catch (err) {
-                console.warn("onShowChange callback failed:", err);
-              }
-            }
-          } catch (err) {
-            console.warn("Failed to read YT title onReady:", err);
-          }
-
-          // Ensure player volume is initialized to our current state.
-          try {
-            if (typeof event.target.setVolume === "function") {
-              event.target.setVolume(volume);
-            }
-          } catch (err) {
-            console.warn("Failed to set initial volume:", err);
-          }
-
-          const safeStart = Math.max(
-            5,
-            Math.floor(Math.random() * (duration - 20))
-          );
-
-          event.target.seekTo(safeStart, true);
-
-          setTimeout(() => {
-            event.target.playVideo();
-          }, 100);
+        videoId: ytId,
+        playerVars: {
+          enablejsapi: 1,
+          playerapiid: "ytplayer",
+          version: 3,
+          autoplay: 0,
+          autohide: 1,
+          controls: 0,
+          fs: 0,
+          rel: 0,
+          origin: window.location.origin,
+          modestbranding: 1,
+          showinfo: 0,
+          iv_load_policy: 3,
+          wmode: "opaque",
+          playsinline: 1,
+          widgetid: 1,
+          disablekb: 1,
         },
-        onError: () => {
-          console.log("Video failed. Loading next...");
-          void fetchRandomVideo();
-        },
-        onStateChange: (event: YTPlayerEvent) => {
-          // PLAYING → hide our overlay that masks the iframe (prevents
-          // YouTube's transient UI like title/overlay from showing).
-          if (event.data === window.YT.PlayerState.PLAYING) {
-            setPlaying(true);
-            // When playback begins, refresh title from YT metadata.
+        events: {
+          onReady: (event: YTPlayerEvent) => {
+            const duration = event.target.getDuration();
+            console.log("Duration:", duration);
+
+            // Try to read the canonical YouTube-provided title and inform parent.
             try {
               const info = event.target.getVideoData?.();
               const ytTitle = info?.title ?? "";
@@ -287,22 +272,67 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
                 }
               }
             } catch (err) {
-              console.warn("Failed to read YT title onStateChange:", err);
+              console.warn("Failed to read YT title onReady:", err);
             }
-          }
 
-          // PAUSED or BUFFERING -> keep overlay hidden once played
-          if (event.data === window.YT.PlayerState.PAUSED) {
-            // leaving setPlaying(true) so UI stays visible to user
-          }
+            // Ensure player volume is initialized to our current state.
+            try {
+              if (typeof event.target.setVolume === "function") {
+                event.target.setVolume(volume);
+              }
+            } catch (err) {
+              console.warn("Failed to set initial volume:", err);
+            }
 
-          // END of video → pick next one and reset playing state
-          if (event.data === window.YT.PlayerState.ENDED) {
-            setPlaying(false);
+            const safeStart = Math.max(
+              5,
+              Math.floor(Math.random() * (duration - 20)),
+            );
+
+            event.target.seekTo(safeStart, true);
+
+            setTimeout(() => {
+              event.target.playVideo();
+            }, 100);
+          },
+          onError: () => {
+            console.log("Video failed. Loading next...");
             void fetchRandomVideo();
-          }
+          },
+          onStateChange: (event: YTPlayerEvent) => {
+            // PLAYING → hide our overlay that masks the iframe (prevents
+            // YouTube's transient UI like title/overlay from showing).
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              setPlaying(true);
+              // When playback begins, refresh title from YT metadata.
+              try {
+                const info = event.target.getVideoData?.();
+                const ytTitle = info?.title ?? "";
+                if (ytTitle) {
+                  setShowName(ytTitle);
+                  try {
+                    onShowChange?.(ytTitle);
+                  } catch (err) {
+                    console.warn("onShowChange callback failed:", err);
+                  }
+                }
+              } catch (err) {
+                console.warn("Failed to read YT title onStateChange:", err);
+              }
+            }
+
+            // PAUSED or BUFFERING -> keep overlay hidden once played
+            if (event.data === window.YT.PlayerState.PAUSED) {
+              // leaving setPlaying(true) so UI stays visible to user
+            }
+
+            // END of video → pick next one and reset playing state
+            if (event.data === window.YT.PlayerState.ENDED) {
+              setPlaying(false);
+              void fetchRandomVideo();
+            }
+          },
         },
-      },
       });
     };
 
@@ -336,13 +366,12 @@ function VideoPlayer({ category, onShowChange }: Props, ref: React.Ref<VideoPlay
 
   return (
     <div className="flex flex-col items-center gap-4">
-
       {video && (
-        <div
-          className="relative"
-          style={{ width: "1000px", height: "550px" }}
-        >
-          <div ref={iframeRef} style={{ width: "100%", height: "100%" }}></div>
+        <div className="relative h-[550px] w-[1000px] overflow-hidden">
+          <div
+            ref={iframeRef}
+            className="absolute left-[-40px] h-full w-full"
+          ></div>
 
           {/* Overlay to mask initial YouTube UI until playback begins. */}
           <div

@@ -2,15 +2,38 @@
 
 import React, { useState, useEffect } from "react";
 
-export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolumeUp, onVolumeDown, showName }: { children: React.ReactNode; isPlaying?: boolean; onToggle?: () => void; onNext?: () => void; onVolumeUp?: () => void; onVolumeDown?: () => void; showName?: string }) {
+export default function TVFrame({
+  children,
+  isPlaying,
+  onToggle,
+  onNext,
+  onVolumeUp,
+  onVolumeDown,
+  showName,
+  category,
+}: {
+  children: React.ReactNode;
+  isPlaying?: boolean;
+  onToggle?: () => void;
+  onNext?: () => void;
+  onVolumeUp?: () => void;
+  onVolumeDown?: () => void;
+  showName?: string;
+  category?: string;
+}) {
   const [staticPrevOpacity, setStaticPrevOpacity] = useState("opacity-0");
   const staticCurrentOpacity = isPlaying
-  ? (showName && showName.length > 0 ? "opacity-10" : "opacity-100")
-  : "opacity-0";
+    ? showName && showName.length > 0
+      ? "opacity-10"
+      : "opacity-100"
+    : "opacity-0";
   const [enableFade, setEnableFade] = useState(false);
+  const [categoryOpacity, setCategoryOpacity] = useState("opacity-100");
 
   useEffect(() => {
-    const isFade = staticPrevOpacity === "opacity-100" && staticCurrentOpacity ===  "opacity-10";
+    const isFade =
+      staticPrevOpacity === "opacity-100" &&
+      staticCurrentOpacity === "opacity-10";
 
     if (isFade) {
       // 1. Add transition immediately
@@ -20,7 +43,6 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
       requestAnimationFrame(() => {
         setStaticPrevOpacity(staticCurrentOpacity);
       });
-
     } else {
       // Always update instantly for all other transitions
       setEnableFade(false);
@@ -28,72 +50,96 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
     }
   }, [staticCurrentOpacity]);
 
+  // Handle category fade-out animation
+  useEffect(() => {
+    const shouldShow =
+      isPlaying &&
+      category &&
+      category.length > 0 &&
+      showName &&
+      showName.length > 0;
+
+    if (shouldShow) {
+      // Reset to visible when category appears
+      setCategoryOpacity("opacity-100");
+
+      // Start fading after 2 seconds
+      const fadeTimer = setTimeout(() => {
+        setCategoryOpacity("opacity-0");
+      }, 2000);
+
+      return () => {
+        clearTimeout(fadeTimer);
+      };
+    } else {
+      // Immediately hide when condition is no longer met
+      setCategoryOpacity("opacity-0");
+    }
+  }, [isPlaying, category, showName]);
 
   return (
-    <div className="relative w-[1100px] mx-auto">
-      {/* BLANK TV FRAME */}
+    <div className="relative mx-auto w-[1100px]">
+      {/* -------------- MAIN TV UI -------------- */}
+      {/* Blank TV Screen */}
       <img
         src="/tvbackclean.png"
-        className="w-full pointer-events-none select-none z-60"
+        className="pointer-events-none z-60 w-full select-none"
         alt="tv-frame"
       />
 
-      {/* MAIN VIDEO SCREEN */}
-      <div className="absolute top-[6px] left-[92px] w-[1000px] h-[550px] overflow-y-hidden">
+      {/* Main Video Player */}
+      <div className="absolute top-[6px] left-[92px] h-[550px] w-[1000px] overflow-y-hidden">
         {children}
       </div>
 
-      {/* STATIC OVERLAY */}
+      {/* Static Overlay */}
       <img
         src="/tvstatic.gif"
         aria-hidden
-        className={`absolute top-[30px] left-[92px] w-[900px] h-[530px] 
-          ${enableFade ? "transition-opacity duration-1200" : ""}
-          ${staticPrevOpacity}
-        `}
-        style={{pointerEvents: "none" }}
+        className={`absolute top-[30px] left-[92px] h-[530px] w-[900px] ${enableFade ? "transition-opacity duration-1200" : ""} ${staticPrevOpacity} `}
+        style={{ pointerEvents: "none" }}
       />
 
-      {/* TV FRAME */}
+      {/* TV Frame */}
       <img
         src="/tvstencil.png"
-        className="w-full absolute top-[0px] inset-0 pointer-events-none select-none z-61"
+        className="pointer-events-none absolute inset-0 top-[0px] z-61 w-full select-none"
         alt="tv-mask"
       />
 
-      {/* Single toggle button (play/stop) */}
+      {/* -------------- TV BUTTONS -------------- */}
+      {/* Play/Stop */}
       <button
         onClick={onToggle}
         aria-label={isPlaying ? "Stop" : "Play"}
-        className={`absolute top-[610px] left-[650.7px] w-[29] h-[29] rounded-full border-0 z-100 cursor-pointer`}
-      >
-      </button>
+        className={`absolute top-[610px] left-[650.7px] z-100 h-[29] w-[29] cursor-pointer rounded-full border-0`}
+      ></button>
 
-      {/* On light — only active while playing */}
+      {/* On light */}
       <div
         aria-hidden
-        className={`absolute top-[617px] left-[589px] w-[16px] h-[16px] rounded-full border-0 z-100 tv-indicator-glow ease-in-out ${isPlaying ? 'opacity-100 tv-indicator-animated' : 'opacity-0'}`}
+        className={`tv-indicator-glow absolute top-[617px] left-[589px] z-100 h-[16px] w-[16px] rounded-full border-0 ease-in-out ${isPlaying ? "tv-indicator-animated opacity-100" : "opacity-0"}`}
       />
 
-      {/* Next button — only active while playing */}
+      {/* Next button */}
       <button
         onClick={() => {
           if (!isPlaying) return;
           onNext?.();
         }}
         aria-label="Next"
-        className={`absolute top-[617.2px] left-[553px] w-[14px] h-[14px] rounded-full border-0 z-100 ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        className={`absolute top-[617.2px] left-[553px] z-100 h-[14px] w-[14px] rounded-full border-0 ${isPlaying ? "cursor-pointer" : "cursor-not-allowed"}`}
         disabled={!isPlaying}
       />
 
-      {/* Previous button — only active while playing */}
+      {/* Previous button */}
       <button
         onClick={() => {
           if (!isPlaying) return;
           onNext?.();
         }}
         aria-label="Previous"
-        className={`absolute top-[617.2px] left-[526px] w-[14px] h-[14px] rounded-full border-0 z-100 ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        className={`absolute top-[617.2px] left-[526px] z-100 h-[14px] w-[14px] rounded-full border-0 ${isPlaying ? "cursor-pointer" : "cursor-not-allowed"}`}
         disabled={!isPlaying}
       />
 
@@ -103,7 +149,7 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onVolumeUp?.();
         }}
         aria-label="Volume Up"
-        className={`absolute top-[617.2px] left-[497.3px] w-[14px] h-[14px] rounded-full border-0 z-100  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        className={`absolute top-[617.2px] left-[497.3px] z-100 h-[14px] w-[14px] rounded-full border-0 ${isPlaying ? "cursor-pointer" : "cursor-not-allowed"}`}
         disabled={!isPlaying}
       />
 
@@ -113,13 +159,32 @@ export default function TVFrame({ children, isPlaying, onToggle, onNext, onVolum
           onVolumeDown?.();
         }}
         aria-label="Volume Down"
-        className={`absolute top-[617.2px] left-[469.9px] w-[14px] h-[14px] rounded-full border-0 z-100  ${isPlaying ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        className={`absolute top-[617.2px] left-[469.9px] z-100 h-[14px] w-[14px] rounded-full border-0 ${isPlaying ? "cursor-pointer" : "cursor-not-allowed"}`}
         disabled={!isPlaying}
       />
 
-      {/* Info text: show instruction when off, otherwise show show name */}
-      <div className={`absolute top-[716px] left-[10px] w-full z-100 text-white text-center italic tv-info-glow tv-info-animated text-2xl`}>
-        {isPlaying ? (showName && showName.length > 0 ? showName : "Loading...") : "Hit the play button to start"}
+      {/* -------------- INFO TEXT -------------- */}
+      {isPlaying &&
+        category &&
+        category.length > 0 &&
+        showName &&
+        showName.length > 0 && (
+          <div
+            className={`absolute top-[80px] right-[170px] z-[100] bg-black/50 px-5 text-2xl text-green-500 transition-opacity duration-1000 ${categoryOpacity}`}
+          >
+            {category}
+          </div>
+        )}
+
+      {/* Info text */}
+      <div
+        className={`tv-info-glow tv-info-animated absolute top-[716px] left-[10px] z-100 w-full text-center text-2xl text-white italic`}
+      >
+        {isPlaying
+          ? showName && showName.length > 0
+            ? showName
+            : "Loading..."
+          : "Hit the play button to start"}
       </div>
     </div>
   );
