@@ -1,29 +1,60 @@
-# Create T3 App
+# RetroTVIndia Frontend 🎬📺🇮🇳
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+The **RetroTVIndia Frontend** is the user interface of the RetroTVIndia platform — a nostalgic recreation of classic Indian television inspired by myretrostv.com.  
 
-## What's next? How do I make an app with this?
+This frontend delivers a smooth, immersive retro-TV experience using modern web technologies, integrated with the RetroTVIndia backend.
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+## 🎨 Features
+- 📺 Retro TV-style interface for browsing classic Indian shows  
+- 🧭 Browse categories like Cartoons, Serials, Music, Commercials & more  
+- ▶️ Built-in video player powered by YouTube  
+- 🎞️ Random episode generator for endless nostalgia  
+- ⚡ Fast, responsive UI using React + Tailwind  
+- 🌙 Clean theme, animations, and classic TV vibes  
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## 🛠️ Tech Stack
+- **Framework:** React ⚛️  
+- **Styling:** Tailwind CSS 🎨  
+- **State Management:** React hooks  
+- **API:** Fetches data from the RetroTVIndia backend  
+- **Deployment:** Vercel / Netlify / Static hosting friendly  
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## 🔗 Backend Connection
+The frontend communicates with the RetroTVIndia Backend.  
 
-## Learn More
+> [!NOTE]
+> Make sure your backend is running at: *http://localhost:8080*
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+*You can configure the API base URL inside: /lib/config.ts*
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+## ▶️ Running Locally
 
-## How do I deploy this?
+```bash
+git clone https://github.com/RetroTVIndia/frontend.git
+cd frontend
+npm install
+npm run dev
+```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+> [!NOTE]
+> Your frontend will start at: *http://localhost:3000*
+> (or whichever port Vite chooses)
+
+## 🤝 Contributing
+We welcome contributions! Whether you want to add new shows, fix metadata, or improve the UI/UX, your help will make RetroTVIndia even better.  
+
+1. Fork the repository 🍴  
+2. Create your feature branch (`git checkout -b feature-name`) 🌿  
+3. Commit your changes (`git commit -m 'Add some feature'`) 💾  
+4. Push to the branch (`git push origin feature-name`) 🚀  
+5. Open a Pull Request 🔃  
+
+## 📬 Contact
+For inquiries or collaboration opportunities, reach out via GitHub Issues or email at **aglakshya06@gmail.com**.  
+
+## ⚖️ License
+This project is licensed under the **MIT License**.  
+
+**🎉 RetroTVIndia Frontend — bringing nostalgia to your screen!**
+
