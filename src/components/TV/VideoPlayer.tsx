@@ -25,6 +25,7 @@ interface VideoApiResponse {
 
 interface Props {
   category?: string;
+  categories?: string[]; // Array of selected categories
   onShowChange?: (name: string) => void;
   onCategoryChange?: (category: string) => void;
 }
@@ -42,7 +43,7 @@ export type VideoPlayerHandle = {
 };
 
 function VideoPlayer(
-  { category, onShowChange, onCategoryChange }: Props,
+  { category, categories, onShowChange, onCategoryChange }: Props,
   ref: React.Ref<VideoPlayerHandle>,
 ) {
   const [video, setVideo] = useState<Video | null>(null);
@@ -143,9 +144,19 @@ function VideoPlayer(
     console.debug("fetchRandomVideo: starting (will stop existing playback)");
     stopPlayback();
 
-    const url = category
-      ? `${BACKEND_URL}/random?category=${category}`
-      : `${BACKEND_URL}/random`;
+    // Build URL with categories - backend accepts multiple category query params
+    let url = `${BACKEND_URL}/random`;
+    if (categories && categories.length > 0) {
+      // Add all selected categories as query parameters
+      const params = new URLSearchParams();
+      categories.forEach((cat) => {
+        params.append("category", cat);
+      });
+      url = `${url}?${params.toString()}`;
+    } else if (category) {
+      // Fall back to single category prop for backward compatibility
+      url = `${url}?category=${encodeURIComponent(category)}`;
+    }
 
     const res = await fetch(url);
     if (!res.ok) {

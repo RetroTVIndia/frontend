@@ -5,18 +5,18 @@ import { CategorySelector } from "@/components/CategorySelector";
 import TV from "@/components/TV/TV";
 
 export default function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   return (
     <>
       <div className="flex w-full flex-col items-center justify-center">
         <div className="mt-6 w-full">
-          <TV category={selectedCategory} />
+          <TV categories={selectedCategories} />
         </div>
 
         <CategorySelector
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          selectedCategories={selectedCategories}
+          onSelectCategories={setSelectedCategories}
         />
       </div>
     </>

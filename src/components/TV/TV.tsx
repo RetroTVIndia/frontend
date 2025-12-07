@@ -6,7 +6,7 @@ import VideoPlayer from "./VideoPlayer";
 import Remote from "./Remote";
 import type { VideoPlayerHandle } from "./VideoPlayer";
 
-export default function TV({ category }: { category?: string }) {
+export default function TV({ category, categories }: { category?: string; categories?: string[] }) {
   const playerRef = useRef<VideoPlayerHandle | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showName, setShowName] = useState<string | undefined>(undefined);
@@ -60,6 +60,7 @@ export default function TV({ category }: { category?: string }) {
         <VideoPlayer
           ref={playerRef}
           category={category}
+          categories={categories}
           onShowChange={(name) => setShowName(name)}
           onCategoryChange={(cat) => setVideoCategory(cat)}
         />

@@ -224,3 +224,8 @@
 .remote-button-active {
   background-color: #9d9d9d;
 }
+
+.sections-header {
+  text-shadow: 0 0 8px rgba(59, 197, 34, 0.9), 0 0 18px rgba(42, 197, 34, 0.6);
+  color: #bdff9e;
+}
